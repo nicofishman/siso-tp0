@@ -106,3 +106,19 @@ void liberar_conexion(int socket_cliente)
 {
 	close(socket_cliente);
 }
+
+
+// --------------------------- MIS UTILS ---------------------------
+/*char* getPathFromFile(char* filename) {
+	char* full_path = malloc(256);
+	if (full_path == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+	char *current_dir = getcwd(NULL, 0);
+	snprintf(full_path, 256, "%s/%s", current_dir, filename);
+	free(current_dir);
+	
+	return full_path;
+}
+*/
