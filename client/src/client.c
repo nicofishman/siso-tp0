@@ -15,10 +15,10 @@ int main(void)
 	/* ---------------- LOGGING ---------------- */
 
 	logger = iniciar_logger();
-	log_info(logger, "Hola! Soy un Log");
 
 	// Usando el logger creado previamente
 	// Escribi: "Hola! Soy un log"
+	// log_info(logger, "Hola! Soy un Log");
 
 
 	/* ---------------- ARCHIVOS DE CONFIGURACION ---------------- */
@@ -45,7 +45,7 @@ int main(void)
 
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
-	leer_consola(logger);
+	// leer_consola(logger);
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
@@ -53,8 +53,23 @@ int main(void)
 
 	// Creamos una conexión hacia el servidor
 	conexion = crear_conexion(ip, puerto);
+	if (conexion < 0) {
+		log_error(logger, "No se pudo conectar al servidor!");
+		terminar_programa(conexion, logger, config);
+	} else {
+		char* mensaje_log = string_from_format("Conectado al servidor %s:%s -- %d", ip, puerto, conexion);
+		log_info(logger, mensaje_log);
+	}	
+
+
+	// Hacemos el handshake
+	uint32_t handshake = 1;
+	uint32_t result;
+	send(conexion, &handshake, sizeof(uint32_t), NULL);
+	recv(conexion, &result, sizeof(uint32_t), MSG_WAITALL);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
+	enviar_mensaje(valor, conexion);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion);
@@ -95,8 +110,6 @@ void leer_consola(t_log* logger)
 		free(leido);
 		leido = readline("> ");
 	}
-
-
 }
 
 void paquete(int conexion)
@@ -105,11 +118,20 @@ void paquete(int conexion)
 	char* leido;
 	t_paquete* paquete;
 
-	// Leemos y esta vez agregamos las lineas al paquete
+	paquete = crear_paquete();
 
+	// Leemos y esta vez agregamos las lineas al paquete
+	leido = readline("> ");
+	while (strlen(leido) > 0) {
+		agregar_a_paquete(paquete, leido, strlen(leido) + 1);
+		leido = readline("> ");
+	}
+	enviar_paquete(paquete, conexion);
 
 	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
-	
+	free(leido);
+	eliminar_paquete(paquete);
+
 }
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
@@ -118,4 +140,6 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 	  con las funciones de las commons y del TP mencionadas en el enunciado */
 
 	log_destroy(logger);
+	config_destroy(config);
+	liberar_conexion(conexion);
 }
